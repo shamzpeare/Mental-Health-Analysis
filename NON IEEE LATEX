@@ -1,0 +1,1366 @@
+\title{\textbf{Detection and Classification of Mental Health Issues Using Unsupervised
+and Supervised Learning Techniques}} % Italicized Title
+\author{\textit{Shambhavi Sahay}} % Italicized Author Name
+\date{\textit{CSE, MIT Manipal}} % Italicized Institution Name
+
+
+\maketitle
+
+\noindent\rule{\textwidth}{0.4pt}
+
+\begin{abstract}
+Mental health disorders are increasingly reflected in the digital expressions of individuals through short, unstructured texts on social media, support forums, and therapy portals. In this study, we present a comprehensive framework for detecting and interpreting mental health conditions using both unsupervised and supervised machine learning approaches. We begin by applying Latent Dirichlet Allocation (LDA), Non-negative Matrix Factorization (NMF), and Probabilistic Latent Semantic Analysis (PLSA) to discover latent themes from textual data. To enhance interpretability, we integrate a retrieval-augmented generation (RAG) pipeline with a large language model (Azure GPT-4), which effectively maps keyword-based topics to clinically relevant diagnostic categories such as depression, anxiety, and suicidal ideation.
+
+For supervised learning, we evaluate three major neural architectures—Convolutional Neural Networks (CNNs), Long Short-Term Memory Networks (LSTMs), and Transformer encoders—across three settings: end-to-end classification, feature extractor pipelines with traditional classifiers, and hybrid soft classifiers trained jointly with neural encoders. Our experiments demonstrate that combining deep encoders with classical ensemble classifiers like Random Forests yields the best performance, achieving a peak test accuracy of 75.00\% with both LSTM and Transformer-based models. CNN-based models, while initially underperforming, showed significant improvements when used in conjunction with interpretable soft classifiers.
+
+Overall, our findings reveal that modular architectures integrating neural feature extraction with interpretable classifiers offer an effective and scalable approach to mental health classification from text. Additionally, the fusion of unsupervised topic modeling with large language models enhances thematic understanding, making this framework suitable for clinical screening, early intervention systems, and scalable digital mental health tools.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Mental Health, Topic Modeling, LDA, Deep Learning, LSTM, Transformers, Interpretability
+\end{IEEEkeywords}
+
+
+\pagenumbering{arabic}  % start numbering with 1, 2, 3...
+\setcounter{page}{1}  
+
+\noindent\rule{\textwidth}{0.4pt}
+
+
+
+
+
+
+\begin{center}
+    \section{Introduction}
+\end{center}
+
+
+\subsection{General Introduction to the Topic}
+Mental health disorders are among the most pressing global health concerns, affecting hundreds of millions of people and contributing significantly to disability, reduced productivity, and even mortality. Despite the scale of this challenge, access to mental health care remains limited in many regions due to stigma, cost, and infrastructure constraints. In recent years, however, individuals have increasingly turned to digital platforms—such as social media, online support communities, and therapy apps—to express their psychological struggles, often in the form of brief, unstructured text. These platforms offer an untapped but rich source of information for the early detection of mental health issues, provided they can be interpreted reliably and ethically through computational means.
+
+Text-based expressions of mental health concerns are subtle, diverse, and context-dependent. Users may describe their emotional states using idioms, sarcasm, rhetorical questions, or fragmented thoughts. These posts are often brief, lacking the length or structure typical of more formal psychological assessments. Moreover, ground-truth labeling of such data is sparse and costly, particularly when clinical accuracy is required. These challenges make traditional rule-based or shallow machine learning methods ill-suited for mental health inference. There is thus a growing need for machine learning models that are both expressive enough to capture emotional nuance and interpretable enough to be deployed responsibly in high-stakes settings.
+
+This work aims to develop a comprehensive pipeline that combines unsupervised and supervised learning to detect and interpret mental health issues from text. The project is guided by three core goals: uncover latent themes in user-generated text that correspond to psychological states, classify these texts into diagnostic categories with high accuracy, and ensure that both outputs are interpretable to domain experts and deployable in real-world applications. The approach is deliberately modular, allowing different components—such as topic models, classifiers, and language models—to be evaluated independently and composed in flexible ways.
+
+The unsupervised component of our system employs three well-established topic modeling algorithms: Latent Dirichlet Allocation (LDA), Non-negative Matrix Factorization (NMF), and Probabilistic Latent Semantic Analysis (PLSA). Each method is applied to a collection of user statements related to mental health, with the aim of extracting clusters of co-occurring terms that represent latent psychological themes. To enhance the interpretability of these clusters, we use a retrieval-augmented generation (RAG) setup with a large language model (Azure GPT-4) to convert lists of top keywords into meaningful topic labels such as "Suicidal Ideation," "Generalized Anxiety Disorder," or "Work-Related Stress." This hybrid approach bridges the gap between unsupervised statistical learning and human-centered understanding.
+
+For supervised learning, we examine three deep neural architectures—Convolutional Neural Networks (CNNs), Long Short-Term Memory Networks (LSTMs), and Transformers—each tested under three configurations: end-to-end classification, feature extraction followed by traditional classifiers (Support Vector Machines, Decision Trees, and Random Forests), and end-to-end training with soft, differentiable ensemble classifiers. The baseline CNN model, which relies on convolutional filters over Word2Vec-embedded input, is limited by its inability to model sequential or long-range dependencies. In contrast, LSTMs and Transformers are better suited to this task, as they are capable of learning temporal and contextual relationships within emotional language. Across all model families, we find that combining neural feature extractors with traditional ensemble classifiers yields substantial improvements in classification accuracy and robustness.
+
+The results of this study offer compelling evidence that hybrid architectures—where unsupervised learning is paired with LLM-based semantic interpretation, and deep representation learning is combined with classical classification—provide the most effective and scalable solutions for mental health text analysis. Such models not only perform well quantitatively, achieving classification accuracies as high as 75\%, but also produce outputs that align with clinical categories and human interpretive needs. The use of large language models further enhances the system's transparency and usability by translating opaque statistical outputs into semantically meaningful insights.
+
+In sum, this project contributes a modular and interpretable framework for understanding mental health through text, combining the strengths of topic modeling, neural representation learning, classical classifiers, and large language models. This work lays a foundation for future systems that could assist clinicians, moderators, or digital health platforms in identifying individuals who may be at risk, enabling earlier interventions and more targeted support. By addressing both performance and interpretability, the system presented here offers a balanced and responsible approach to applying AI in the deeply human domain of mental health.
+
+\subsection{Area of Computer Science}
+This study falls under the domain of Artificial Intelligence (AI) and Machine Learning (ML), specifically within Natural Language Processing (NLP) and Deep Learning. NLP focuses on analyzing and interpreting human language, enabling computers to extract meaningful patterns from text data. Deep learning, a subset of ML, utilizes neural networks to process complex textual information, learning hierarchical representations that improve classification accuracy.
+
+Furthermore, the study incorporates ensemble learning, a technique in machine learning that combines multiple models to improve overall performance. Traditional classifiers such as Decision Trees, Random Forests, and Support Vector Machines (SVMs) are integrated with deep learning architectures, demonstrating how hybrid approaches can enhance depression classification.
+
+\subsection{Present Day Scenario}
+In today's digitally connected world, individuals are increasingly relying on online platforms as primary outlets for emotional expression and psychological self-disclosure. Social media networks (e.g., Twitter, Facebook, Instagram), discussion forums (e.g., Reddit, Quora), and dedicated mental health communities (e.g., 7 Cups, TalkLife) serve not only as spaces for social interaction but also as digital diaries where people openly articulate their mental states, daily struggles, anxieties, and personal traumas. This shift from traditional, face-to-face interactions to digital communication has led to the rapid proliferation of unstructured, text-rich data that encapsulates nuanced indicators of mental health, such as linguistic patterns, emotional tone, and behavioral cues.
+
+Concurrently, the global mental health landscape is facing a profound crisis. According to the World Health Organization, depression is now one of the leading causes of disability worldwide, and anxiety disorders affect hundreds of millions globally. Despite the escalating need, access to professional mental health support remains significantly limited, particularly in low- and middle-income countries, rural areas, and among marginalized populations. Long waiting times, high treatment costs, social stigma, and a shortage of trained professionals further exacerbate this gap in mental health care.
+
+These dual realities—an explosion of mental health-relevant data in digital spaces and a persistent scarcity of accessible support—underscore a pressing need for computational systems that can bridge this divide. Advances in artificial intelligence (AI), natural language processing (NLP), and machine learning offer a powerful opportunity to create intelligent tools that can automatically identify early warning signs of mental distress, categorize different psychological conditions, and support proactive mental health intervention. By analyzing language patterns and sentiments expressed in user-generated content, these systems can serve as scalable, non-invasive, and cost-effective complements to traditional care, providing timely insights to clinicians, caregivers, and users themselves.
+
+In this context, the development of mental health detection models leveraging textual data is not only a technological innovation but also a societal imperative—positioned at the intersection of data science, psychology, and public health.
+
+\subsection{Motivation for the Project}
+The primary motivation for undertaking this project arises from two interrelated and compelling observations grounded in both public health needs and technological opportunity.
+
+First, early detection of mental health disorders is critical for improving patient outcomes, reducing the severity and duration of conditions such as depression, anxiety, PTSD, and suicidal ideation. Clinical studies consistently show that early intervention—whether through counseling, therapy, or medication—can dramatically reduce the burden of mental illness on individuals and healthcare systems. However, in current real-world scenarios, mental health assessments are largely reliant on manual methods such as in-person interviews, questionnaires (e.g., PHQ-9, GAD-7), or self-report surveys. These approaches are labor-intensive, time-consuming, and inaccessible to many. Moreover, they often capture only a snapshot of an individual's mental state rather than providing continuous monitoring. This results in many cases going undiagnosed or being identified too late, especially in underserved populations or in regions with a shortage of mental health professionals.
+
+Second, although natural language processing (NLP) and deep learning have seen transformative advances—especially in domains like sentiment analysis, machine translation, and conversational AI—their targeted application to mental health remains relatively underexplored. Existing models are typically designed for general-purpose language tasks and often fail to capture the unique linguistic, emotional, and contextual nuances embedded in mental health discourse. Language used by individuals experiencing psychological distress tends to be more metaphorical, fragmented, and laden with emotion, making it distinct from everyday communication. Additionally, mental health content is inherently sensitive, making interpretability and ethical considerations paramount. Current models often act as “black boxes,” lacking the transparency needed for clinical decision-making or trust in real-world deployments.
+
+This project is therefore motivated by the urgent need to bridge this methodological and application gap. The aim is to design models that are not only technically robust and accurate, but also interpretable, modular, and ethically grounded. The intent is to enable real-time, scalable analysis of mental health-related textual data drawn from online platforms, digital therapy apps, and community forums. By doing so, the project aspires to contribute meaningfully to both computational mental health research and the broader societal goal of democratizing access to early mental health support.
+
+Ultimately, this project is driven by a vision of leveraging AI to enhance human well-being, equipping clinicians, caregivers, and affected individuals with tools that are timely, intelligent, and compassionate.
+
+
+\subsection{Shortcomings in Previous Work}
+
+Despite increasing interest in computational methods for mental health analysis, existing literature exhibits several critical shortcomings that constrain the practical utility, interpretability, and effectiveness of these approaches in real-world applications.
+
+Firstly, many prior studies have treated topic modeling and supervised classification as independent tasks, rather than integrating them into a unified pipeline. Topic modeling, often conducted using Latent Dirichlet Allocation (LDA) or Non-negative Matrix Factorization (NMF), has been widely used to uncover latent themes in mental health-related corpora (Coppersmith et al., 2015; Resnik et al., 2015). However, these models typically do not inform downstream classification tasks, nor are they enriched by labels or feedback from supervised learning processes. This disjointed approach limits the ability to build end-to-end systems that are both thematically insightful and diagnostically useful.
+
+Secondly, earlier research often relies on shallow or keyword-based models, such as bag-of-words representations, TF-IDF vectors, or simple logistic regression and support vector machines (Yazdavar et al., 2017; Chancellor \& De Choudhury, 2020). While computationally efficient, these models are fundamentally limited in their ability to capture the semantic complexity and contextual richness of language used in mental health discourse. Expressions of psychological distress are frequently subtle, metaphorical, or embedded in idiomatic and culturally contextual language, which static models fail to adequately represent.
+
+A third limitation lies in the lack of focus on interpretability and generalizability. Interpretability is crucial for clinical applications, where black-box predictions without transparent reasoning are often deemed unreliable or unethical. Yet, many state-of-the-art deep learning models fail to provide explanations for their outputs or are evaluated solely on accuracy metrics without addressing model explainability (Doshi-Velez \& Kim, 2017). Moreover, generalizability across platforms (e.g., Reddit vs. Twitter) and populations (e.g., adolescents vs. adults) is rarely tested, raising concerns about model robustness and real-world deployability.
+
+Another notable gap is the underutilization of large language models (LLMs) such as BERT (Devlin et al., 2019), RoBERTa (Liu et al., 2019), or GPT-based architectures, which have shown remarkable capabilities in semantic understanding, transfer learning, and contextual reasoning. Only a few recent works have attempted to adapt these models to mental health datasets (Ji et al., 2022; Guntuku et al., 2023), and even fewer have leveraged them for bridging unsupervised topic discovery with supervised diagnosis prediction. Consequently, the interpretive gap between latent topic outputs and clinical insight remains largely unaddressed.
+
+These limitations collectively point to a significant opportunity for methodological advancement. There is a need for hybrid systems that unify unsupervised and supervised techniques, incorporate the deep semantic comprehension of LLMs, and are designed with a commitment to transparency, adaptability, and ethical robustness. This project aims to directly address these gaps by developing interpretable, modular, and semantically enriched models for mental health text analysis.
+
+\subsection{Importance in the Present Context}
+
+The relevance of this project is underscored by the dual forces shaping the current mental health landscape: the surging global demand for psychological support and the increasing reliance on digital platforms for emotional expression. Mental health disorders—ranging from depression and anxiety to more severe conditions such as bipolar disorder and schizophrenia—are now among the leading causes of disability worldwide (World Health Organization, 2022). However, despite growing awareness, structural barriers such as provider shortages, social stigma, high treatment costs, and geographic inaccessibility persist, leaving millions without adequate care.
+
+In parallel, there has been an exponential rise in user-generated mental health discourse on digital platforms. Social media posts, online forums, anonymous support communities, and mental health blogs now serve as real-time indicators of emotional distress, coping behavior, and psychological trends across diverse populations. This digital footprint represents a largely untapped resource for scalable, real-time mental health surveillance and intervention.
+
+This project is therefore acutely aligned with contemporary needs in digital mental health monitoring, public health informatics, and clinical decision support systems. By combining qualitative thematic insights through topic modeling with quantitative mental health prediction using supervised learning, the proposed system offers a multifaceted solution capable of addressing several real-world applications:
+
+\subsection{Uniqueness of the Methodology}
+The uniqueness of the methodology lies in its hybrid and modular approach, which integrates diverse machine learning strategies into a cohesive and interpretable pipeline. The project begins with traditional topic modeling techniques such as Latent Dirichlet Allocation (LDA), Non-negative Matrix Factorization (NMF), and Probabilistic Latent Semantic Analysis (PLSA), optimized using coherence score evaluations to extract coherent themes from mental health-related textual data. Unlike conventional pipelines that stop at statistical topic generation, this project semantically enriches these topics using advanced large language models (LLMs), particularly Azure GPT-4, to translate abstract topic clusters into meaningful, human-understandable diagnostic categories. For classification, the system implements a comparative analysis using deep learning architectures—including CNNs, LSTMs, and Transformers—across a three-tiered design. These tiers consist of (1) end-to-end neural classifiers, (2) neural feature extractors integrated with traditional classifiers like Random Forest and SVM, and (3) differentiable soft classifiers such as Soft SVMs and Soft Random Forests to produce smooth, probabilistic decision boundaries. This methodological design ensures both high predictive performance and interpretability, setting it apart from prior works that often trade one for the other.
+
+\subsection{Significance of the End Results}
+The significance of the end results is reflected in the system’s ability to contribute meaningfully to multiple real-world applications in digital mental health. The final model will be capable of clustering and labeling thematically coherent mental health discourse, identifying early warning signs of psychological distress, and classifying short, user-generated texts into diagnostic categories such as depression, anxiety, or suicidal ideation. Importantly, the system is designed to provide interpretable outputs, such as the dominant topics influencing classification decisions, thereby making it suitable for clinical and non-clinical stakeholders alike. These outputs can aid healthcare providers, online support platforms, and social media moderators in identifying and responding to high-risk content, facilitating early intervention and continuous mental health monitoring at scale. Ultimately, the project aims to produce a deployable framework that can be integrated into digital therapeutic tools, mental health apps, or public health surveillance systems—thereby enhancing accessibility, responsiveness, and precision in mental health care.
+
+
+
+\subsection{Objective of the Work}
+
+\subsubsection*{Main Objective}
+The central objective of this project is to design and develop a \textbf{hybrid machine learning framework} that is capable of \textbf{detecting, interpreting, and classifying mental health conditions} from short, user-submitted textual statements. This will be achieved by combining the strengths of \textbf{unsupervised topic modeling techniques} with \textbf{supervised deep learning-based classification models}, creating a system that is both \textbf{data-efficient} and \textbf{clinically interpretable}. The framework aims to bridge the gap between raw, unstructured linguistic data and actionable psychological insights by integrating statistical modeling, semantic enrichment via large language models (LLMs), and modern deep learning architectures.
+
+\subsubsection*{Secondary Objectives}
+\begin{enumerate}
+    \item \textbf{Unsupervised Theme Discovery with Interpretability:} To extract latent psychological themes such as depression, anxiety, and suicidal ideation from the text corpus using \textbf{LDA}, \textbf{NMF}, and \textbf{PLSA}. These themes will be enhanced with \textbf{semantic labeling using GPT-4} in a Retrieval-Augmented Generation (RAG) setup, enabling unsupervised outputs to be mapped to clinically meaningful categories.
+    
+    \item \textbf{Comparative Evaluation of Neural Classifiers:} To implement and benchmark the performance of three neural architectures—\textbf{CNNs}, \textbf{LSTMs}, and \textbf{Transformers}—on the task of classifying mental health status. The objective is to identify which architecture best captures the nuances of emotional expression in short text.
+    
+    \item \textbf{Integration with Traditional and Soft Classifiers:} To decouple the representation and decision layers by using deep neural encoders as feature extractors, followed by both \textbf{traditional classifiers} (SVM, Decision Tree, Random Forest) and \textbf{differentiable soft classifiers} (e.g., Soft Random Forest, Soft SVM). This enables interpretable, modular, and trainable decision-making mechanisms.
+    
+    \item \textbf{Interpretability and Human-Centric AI Design:} To prioritize model transparency by employing LLMs for topic explanation and soft classifiers for structured decisions, aligning with ethical standards for mental health AI systems.
+\end{enumerate}
+
+\subsection{Target Specifications}
+\begin{itemize}
+    \item \textbf{Accuracy Target:} The top-performing supervised models should achieve \textbf{at least 70\% test accuracy}. Models are expected to be evaluated under a rigorous cross-validation setup to ensure generalization.
+    
+    \item \textbf{Interpretability:} All unsupervised topics must be translated into \textbf{human-readable, clinically aligned labels} using \textbf{GPT-4 via RAG}, ensuring the system is not a black box.
+    
+    \item \textbf{Modularity and Reusability:} Each module—embedding generator, topic model, classifier—should be \textbf{independently testable, replaceable, and extensible}, supporting long-term reusability and experimentation.
+    
+    \item \textbf{Deployment Readiness:} The system should produce outputs in a format suitable for integration with \textbf{mental health monitoring platforms}, \textbf{social media moderation systems}, or \textbf{clinical triage pipelines}, enabling real-world impact.
+\end{itemize}
+
+\subsection{Project Work Schedule}
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{|c|p{11cm}|}
+\hline
+\textbf{Week(s)} & \textbf{Task Description} \\
+\hline
+1–2 & Conduct literature review on mental health NLP, topic modeling, and deep learning classification. Acquire and examine dataset(s). \\
+3–4 & Perform data cleaning, text normalization, tokenization, and preprocessing. Prepare inputs for both unsupervised and supervised pipelines. \\
+5–6 & Implement and evaluate LDA, NMF, and PLSA. Compute coherence scores to assess topic quality and refine hyperparameters (K, $\alpha$). \\
+7 & Integrate GPT-4 into a RAG framework to generate topic labels from keyword outputs. Validate interpretability through qualitative review. \\
+8–9 & Implement baseline supervised models (CNN, LSTM, Transformer) using Word2Vec inputs. Train and test under standard splits. \\
+10 & Extract deep embeddings and train traditional classifiers (SVM, Decision Tree, Random Forest) on them. Compare results to baselines. \\
+11 & Build and train hybrid models with differentiable soft classifiers (Soft RF, Soft DT, Soft SVM). Fine-tune hyperparameters. \\
+12 & Conduct comparative evaluation of all models. Compile results into structured tables and plots. Assess accuracy, interpretability, and runtime. \\
+13 & Generate visualizations: coherence trends, accuracy comparisons, topic-to-label mappings. Conduct qualitative analysis. \\
+14 & Finalize documentation. Write and compile the project report, including abstract, conclusion, and formatting for submission. \\
+\hline
+\end{tabular}
+\caption{Work Schedule for Project Implementation}
+\end{table}
+
+\subsection{Organization of the Project Report}
+The final report will be structured as follows:
+
+\begin{itemize}
+    \item \textbf{Chapter 1: Introduction} \\
+    Presents the current landscape of mental health issues, challenges in text-based diagnosis, project motivation, and the research problem.
+
+    \item \textbf{Chapter 2: Literature Survey} \\
+    Reviews state-of-the-art research on topic modeling, mental health classification from text, interpretability in AI, and hybrid model architectures.
+
+    \item \textbf{Chapter 3: Methodology} \\
+    Describes in detail the design and mathematical formulation of each module: unsupervised models, semantic labeling with LLMs, and supervised classifiers.
+
+    \item \textbf{Chapter 4: Implementation} \\
+    Covers implementation decisions, code structure, training procedures, hardware environment, and model configuration details.
+
+    \item \textbf{Chapter 5: Results and Analysis} \\
+    Presents and interprets experimental findings using accuracy metrics, coherence scores, and qualitative outputs (topics and LLM-generated labels).
+
+    \item \textbf{Chapter 6: Discussion} \\
+    Explores implications, design trade-offs, comparative insights between models, and alignment with human-centric mental health needs.
+
+    \item \textbf{Chapter 7: Conclusion and Future Work} \\
+    Summarizes contributions and outlines pathways for future research, such as multimodal data integration and clinical deployment.
+
+    \item \textbf{References} \\
+    Lists all cited works, including foundational papers and tools used (e.g., Scikit-learn, Gensim, HuggingFace Transformers).
+
+\end{itemize}
+
+
+\begin{center}
+    \section{Background}
+\end{center}
+
+\subsection{Introduction}
+
+This section provides a comprehensive exploration of the theoretical foundations and current research landscape relevant to the automatic detection and classification of mental health issues through user-generated text. It begins with an introduction to the specific domain of mental health analysis using machine learning and natural language processing (NLP), proceeds to a detailed review of unsupervised and supervised approaches, and examines state-of-the-art developments in each. A literature survey highlights the evolution of methods in the domain and identifies limitations in current solutions. The section culminates in a general analysis and theoretical synthesis that positions the present work as a novel, integrated contribution to this rapidly growing interdisciplinary field.
+
+\subsection{Introduction to the Project Title}
+
+The project titled \textbf{``Detection and Classification of Mental Health Issues Using Unsupervised and Supervised Learning Techniques''} centers on the computational analysis of user-submitted textual data to detect psychological patterns indicative of conditions such as depression, anxiety, suicidal ideation, panic disorders, and bipolar disorder. With the increasing digital footprint of individuals on social platforms, there exists a vast and largely untapped corpus of emotional, behavioral, and psychological data expressed through natural language. The central aim of the project is to build a hybrid machine learning pipeline that combines unsupervised topic discovery with robust and interpretable supervised classification to infer mental health status in an accurate, scalable, and clinically relevant manner.
+
+\subsection{Dataset}
+
+Ahmed S. Soliman's "Sentiment Analysis for Mental Health – Combined Data" dataset was used. This dataset was created to facilitate research at the intersection of natural language processing and mental health classification, and it is openly accessible on HuggingFace.
+
+ There are two main columns in the dataset:
+
+ statement: A user's expression or message expressed in free-text.
+
+ status: A classification that denotes the underlying mental health issue that can be deduced from the statement.
+
+ Normal, Depression, Anxiety, Bipolar Disorder (BPD), Personality Disorder, and Suicidal are among the classes listed in the status column.  Multi-class classification tests aimed at detecting mental health issues are made possible by these categories, which reflect a range of psychological illnesses.
+
+\subsection{Literature Review}
+
+\subsubsection{Recent Developments in the Work Area}
+
+The intersection of artificial intelligence and mental health has grown significantly over the past decade. While early works relied on lexicon-based methods and manual annotation, the field has evolved toward more sophisticated machine learning pipelines. Recent developments focus on the integration of contextual word embeddings, large-scale transformer models, and unsupervised learning to uncover latent psychological themes.
+
+Contemporary research also addresses ethical concerns, such as fairness, bias mitigation, and transparency, especially when deploying AI systems in mental health settings. Advances in interpretability methods (e.g., SHAP, LIME, attention visualization) and the emergence of retrieval-augmented generation (RAG) and instruction-tuned LLMs (e.g., GPT-4) have also opened new pathways for making AI systems more explainable and clinically aligned.
+
+\subsubsection{Background Theory}
+
+The theoretical underpinnings of the project span multiple subfields:
+
+\paragraph{Unsupervised Learning and Topic Modeling}
+\begin{itemize}
+    \item \textbf{Latent Dirichlet Allocation (LDA)}: A generative probabilistic model where each document is viewed as a mixture of topics, and each topic is a distribution over words. LDA uses Dirichlet priors to ensure sparsity in topic-document and topic-word distributions.
+    \item \textbf{Non-negative Matrix Factorization (NMF)}: A linear algebraic approach that decomposes a term-document matrix into two lower-dimensional, non-negative matrices representing topics and topic weights.
+    \item \textbf{Probabilistic Latent Semantic Analysis (PLSA)}: Based on matrix decomposition, PLSA treats the co-occurrence of words and documents as a mixture model and applies Expectation-Maximization (EM) for parameter estimation.
+\end{itemize}
+
+\paragraph{Supervised Learning}
+\begin{itemize}
+    \item \textbf{CNNs for Text}: Capture local word patterns using convolutional filters, suitable for detecting emotional n-grams.
+    \item \textbf{LSTMs}: Model sequential dependencies using memory cells and gating mechanisms, well-suited for tracking emotional tone and temporal structures.
+    \item \textbf{Transformers}: Utilize self-attention to dynamically compute token relationships, enabling global understanding of textual semantics.
+\end{itemize}
+
+\paragraph{Semantic Enrichment using LLMs}
+\begin{itemize}
+    \item Large language models like \textbf{GPT-4} can contextualize keyword-based topics, making them human-readable and aligned with psychiatric taxonomies.
+    \item \textbf{Retrieval-Augmented Generation (RAG)} allows dynamic prompting of LLMs with topic keywords and context for better interpretability.
+\end{itemize}
+
+\paragraph{Evaluation Metrics}
+\begin{itemize}
+    \item \textbf{Coherence Score}: Used to evaluate unsupervised topic quality based on word co-occurrence patterns.
+    \item \textbf{Accuracy}: Used to evaluate supervised classification models.
+\end{itemize}
+
+\subsection{Literature Survey}
+
+\subsubsection{Review of Existing Literature}
+
+Several foundational and recent research efforts have significantly informed the design and motivation behind this project:
+
+\begin{itemize}
+    \item \textbf{Resnik et al. (2015)} applied Latent Dirichlet Allocation (LDA) to Reddit posts from users who self-identified as having depression. They analyzed topic distributions and demonstrated correlations between topic prevalence and depressive symptoms using psycholinguistic patterns. This work laid the groundwork for using unsupervised learning for mental health signal extraction from user-generated content.
+
+    \item \textbf{Coppersmith et al. (2018)} used Twitter data to detect mental health conditions including PTSD and depression. Their study employed Support Vector Machines (SVMs) trained on n-gram and metadata features, demonstrating the feasibility of automated risk detection using short-form social media text.
+
+    \item \textbf{Chancellor et al. (2019)} presented a comprehensive analysis of ethical concerns surrounding AI systems in mental health applications. They emphasized the importance of privacy, consent, transparency, and minimizing unintended harm, underscoring the necessity for responsible and interpretable AI systems.
+
+    \item \textbf{Guntuku et al. (2017)} analyzed Facebook status updates using psycholinguistic features and personality traits, showing that linguistic signals can predict conditions such as anxiety and depression. Their findings support the value of individualized language patterns in mental health prediction.
+
+    \item \textbf{Benton et al. (2020)} introduced a multitask learning architecture using BERT to simultaneously predict multiple comorbid conditions. By leveraging shared representations across tasks, they improved generalization and performance in mental health classification.
+
+    \item \textbf{Liu et al. (2021)} applied topic modeling to mental health forums and validated the clinical relevance of discovered topics through domain expert evaluation. Their work highlights the interpretability potential of topic models when coupled with clinician feedback.
+
+    \item \textbf{Sadeque et al. (2021)} demonstrated the effectiveness of combining topic modeling with supervised classification. Their hybrid approach, where topic representations served as input features, improved both model performance and interpretability.
+
+    \item \textbf{Zirikly et al. (2019)} led the CLPsych shared task on suicide risk classification from social media. They provided benchmark datasets and established evaluation protocols that remain widely used in the field.
+\end{itemize}
+
+\subsubsection{Summarized Outcome of the Literature Review}
+
+The literature shows increasing sophistication in the application of NLP and machine learning to mental health analysis. Unsupervised methods like LDA have been successful in discovering latent topics but often lack semantic clarity. Supervised deep learning methods yield high accuracy but offer limited interpretability. Notably, few existing studies:
+
+\begin{itemize}
+    \item Combine unsupervised topic modeling with supervised classification in a cohesive architecture.
+    \item Employ large language models (LLMs) such as GPT-4 for semantic enrichment of topics.
+    \item Compare traditional and soft interpretable classifiers across neural embedding spaces.
+\end{itemize}
+
+This creates a research gap and an opportunity for a novel hybrid framework that combines statistical, neural, and generative approaches to improve both accuracy and transparency.
+
+\subsection{Theoretical Discussion}
+
+This project extends the above theoretical constructs into a unified, modular pipeline. Unlabeled text is first semantically structured using topic modeling. To enhance topic interpretability, clusters of topic keywords are passed to a retrieval-augmented large language model (GPT-4), which generates clinically aligned topic labels. These semantically enriched representations serve as a foundation for supervised learning using deep encoders such as CNNs, LSTMs, and Transformers.
+
+The extracted features are then classified using either:
+\begin{itemize}
+    \item Traditional models (e.g., SVM, Random Forest),
+    \item Or soft interpretable classifiers (e.g., Soft Decision Trees, Soft SVM).
+\end{itemize}
+
+From a theoretical standpoint:
+\begin{itemize}
+    \item \textbf{LDA} uses Bayesian inference to estimate posterior distributions over topics and word assignments.
+    \item \textbf{CNNs and LSTMs} use gradient-based optimization to minimize classification loss. LSTMs include gating mechanisms to retain long-term dependencies.
+    \item \textbf{Transformers} utilize self-attention and positional encodings to model global dependencies in text.
+\end{itemize}
+
+Each component contributes a unique strength: statistical models provide structure, deep models provide expressive power, and generative models enhance semantic clarity.
+
+\subsection{General Analysis}
+
+The literature indicates that LSTMs and Transformers consistently outperform traditional models in supervised mental health classification tasks. However, topic modeling remains relevant as a tool for extracting interpretable latent structure. Classical classifiers, when supplied with high-quality neural features, perform competitively and offer interpretability.
+
+Integrating GPT-4 for semantic labeling of topic clusters is a novel strategy that bridges statistical outputs and human-understandable clinical taxonomies. This approach moves toward a more explainable and patient-aligned NLP system.
+
+\subsection{Conclusion}
+
+In summary, the literature underscores the necessity for hybrid and interpretable AI systems in mental health analysis. Although prior research has explored topic modeling and classification independently, few have implemented a full-stack architecture integrating statistical, neural, and generative layers. This project aims to fill that gap by introducing a unified framework that ensures:
+
+\begin{itemize}
+    \item Semantic enrichment through LLMs,
+    \item Contextual representation through deep encoders,
+    \item Interpretable and accurate classification through soft decision modules.
+\end{itemize}
+
+This aligns with the principles of explainable AI and reflects a shift toward ethically responsible, clinically useful machine learning in mental health contexts.
+
+
+
+
+\begin{center}
+    \section{Methodology and Implementation Details}
+\end{center}
+This chapter outlines the comprehensive methodology adopted to detect, interpret, and classify mental health conditions from user-generated text using a hybrid of unsupervised and supervised machine learning techniques. The proposed system is designed to address both the semantic complexity of mental health discourse and the need for model interpretability and clinical alignment. The methodology is modular in nature and comprises three primary stages: (1) unsupervised topic modeling for latent theme discovery, (2) semantic enrichment of topics using a large language model (LLM), and (3) supervised classification using deep neural encoders combined with both traditional and differentiable classifiers. Each stage is constructed with the objective of maximizing either insight (in the case of unsupervised models) or predictive accuracy (in the case of supervised models), while also ensuring that intermediate outputs remain transparent and interpretable. The methodology also details data preprocessing steps, model configurations, hyperparameter settings, and evaluation metrics. This chapter serves as the technical backbone of the project, translating the conceptual framework into an implementable and reproducible pipeline.
+
+
+\subsection{Latent Dirichlet Allocation for Topic Discovery}
+
+To explore latent themes associated with mental health indicators within textual data, we employ Latent Dirichlet Allocation (LDA), a generative probabilistic model for topic modeling. Our objective is to discover semantically coherent topics that characterize the underlying discourse in user-submitted statements, which subsequently inform both interpretability and supervised classification tasks.
+
+\subsubsection{Preprocessing and Corpus Representation}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{topic_model_flowchart.png}
+    \caption{Pipeline for topic generation}
+    \label{fig:your-label}
+\end{figure}
+
+Let $\mathcal{D} = \{ d_1, d_2, \dots, d_N \}$ denote the corpus of $N$ documents, where each document $d_i$ is a free-form text statement extracted from the dataset. Standard text preprocessing steps are applied, including lowercasing, tokenization, stop-word removal, and punctuation filtering. Each document is then transformed into a sparse bag-of-words representation via the \texttt{CountVectorizer}, resulting in a document-term matrix $X \in \mathbb{R}^{N \times V}$, where $V$ is the size of the vocabulary and $X_{ij}$ denotes the frequency of term $j$ in document $i$.
+
+\subsubsection{ Generative Process of LDA}
+
+LDA assumes the following hierarchical Bayesian generative process for each document $d \in \mathcal{D}$:
+
+\begin{itemize}
+    \item Draw a topic distribution for the document:
+    \[
+        \bm{\theta}_d \sim \text{Dirichlet}(\bm{\alpha}), \quad \bm{\theta}_d \in \mathbb{R}^K
+    \]
+    \item For each word position $n = 1, \dots, N_d$ in document $d$:
+    \begin{align*}
+        z_{dn} &\sim \text{Categorical}(\bm{\theta}_d) \\
+        w_{dn} &\sim \text{Categorical}(\bm{\phi}_{z_{dn}})
+    \end{align*}
+\end{itemize}
+
+where $\bm{\phi}_k \sim \text{Dirichlet}(\bm{\beta})$ is the word distribution for topic $k$.
+
+The central goal is to infer the posterior distribution:
+\[
+    p(\bm{\theta}, \bm{\phi}, \mathbf{z} \mid \mathbf{w}, \bm{\alpha}, \bm{\beta})
+\]
+which is computationally intractable and approximated using variational inference within the \texttt{LatentDirichletAllocation} class in \texttt{scikit-learn}.
+
+\subsubsection{Model Configuration and Topic Selection}
+
+We fit LDA models for a fixed number of topics $K \in \{7\}$ while systematically varying the document-topic Dirichlet prior parameter $\alpha \in [0.01, 1.0]$. For each combination of $(K, \alpha)$, the model is trained with \texttt{learning\_method='batch'} and \texttt{max\_iter=100} iterations. The topic-word matrix $\Phi \in \mathbb{R}^{K \times V}$ is extracted post-training, where $\phi_{kj}$ denotes the probability of term $j$ under topic $k$.
+
+For interpretability, we extract the top $n=10$ most probable words per topic by ranking the entries of each $\bm{\phi}_k$:
+
+\[
+    \text{TopWords}_k = \text{argsort}(\bm{\phi}_k)[-n:]
+\]
+
+\subsubsection{Topic Quality Evaluation via Coherence}
+
+To evaluate the semantic quality of discovered topics, we adopt a coherence scoring function $C(T)$, which quantifies the degree of semantic similarity among top keywords within a topic $T = \{ w_1, \dots, w_n \}$. We use pairwise normalized pointwise mutual information (NPMI) or a WordNet-based similarity function, depending on implementation:
+
+\[
+    C(T) = \frac{2}{n(n-1)} \sum_{i<j} \log \frac{D(w_i, w_j) + \epsilon}{D(w_j)}
+\]
+
+where $D(w_i, w_j)$ denotes the number of documents containing both $w_i$ and $w_j$, and $\epsilon > 0$ is a small smoothing constant.
+
+For each LDA configuration, we compute the mean coherence score across topics. The optimal number of topics $K^*$ and hyperparameter $\alpha^*$ are selected via:
+
+\[
+    (K^*, \alpha^*) = \arg\max_{K, \alpha} \; \text{Coherence}(K, \alpha)
+\]
+
+\subsubsection{Visualization and Interpretability}
+
+We visualize the effect of $\alpha$ on topic coherence for fixed $K$ to understand model sensitivity to prior sparsity. Furthermore, the top terms from each topic are manually inspected and labeled to interpret recurring psychological or affective patterns in the corpus (e.g., themes of isolation, anxiety, hopelessness).
+
+\subsection{Non-negative Matrix Factorization for Topic Discovery}
+
+As a complementary approach to probabilistic topic models, we employ Non-negative Matrix Factorization (NMF) to uncover latent semantic structures in the corpus. NMF offers an interpretable linear-algebraic framework for factorizing high-dimensional document-term matrices into non-negative, low-rank topic representations, with the goal of discovering interpretable components corresponding to coherent topics.
+
+\subsubsection{Vectorization and Matrix Representation}
+Given a collection of preprocessed documents $\mathcal{D} = \{d_1, d_2, \ldots, d_N\}$, we construct a weighted term-frequency representation using the TF-IDF (Term Frequency–Inverse Document Frequency) scheme. Let the resulting matrix be:
+\[
+X \in \mathbb{R}_{\geq 0}^{N \times V}
+\]
+where $X_{ij}$ denotes the TF-IDF weight of term $j$ in document $i$, and $V$ is the vocabulary size.
+
+The TF-IDF representation enhances topic separability by emphasizing words that are frequent within a document but rare across the corpus.
+
+\subsubsection{Factorization Model}
+NMF seeks to approximate the matrix $X$ as a product of two low-rank non-negative matrices:
+\[
+X \approx WH, \quad \text{with } W \in \mathbb{R}_{\geq 0}^{N \times K}, \; H \in \mathbb{R}_{\geq 0}^{K \times V}
+\]
+where:
+\begin{itemize}
+    \item $W_{ik}$ encodes the association strength of document $i$ with topic $k$,
+    \item $H_{kv}$ represents the importance of word $v$ in topic $k$,
+    \item $K$ is the number of topics.
+\end{itemize}
+
+The factorization is computed by minimizing the Kullback-Leibler divergence or Euclidean reconstruction error, subject to non-negativity constraints:
+\[
+\min_{W,H} \; D(X \Vert WH) \quad \text{subject to } W, H \geq 0
+\]
+In our implementation, we initialize the matrices using Non-negative Double Singular Value Decomposition (NNDSVD) and optimize via coordinate descent with \texttt{max\_iter=400}.
+
+\subsubsection{Topic Extraction and Interpretability}
+Once $H$ is learned, each row $H_k \in \mathbb{R}_{\geq 0}^V$ defines a topic-word distribution over the vocabulary. For each topic $k$, we extract the top-$n=10$ words with the highest weights:
+\[
+\text{TopWords}_k = \texttt{argsort}(H_k)[-n:]
+\]
+These word lists provide human-interpretable semantic characterizations of each topic.
+
+\subsubsection{Topic Coherence Evaluation}
+To assess the semantic coherence of topics, we compute the coherence score for each set of top words using a pairwise similarity metric:
+\[
+C(T_k) = \frac{2}{n(n-1)} \sum_{i < j} \log \frac{D(w_i, w_j) + \epsilon}{D(w_j)}
+\]
+where $D(w_i, w_j)$ is the number of documents in which both terms co-occur, and $\epsilon$ is a small constant to avoid singularities.
+
+We evaluate the model across a range of topic numbers $K \in \{5, 6, 7\}$, recording the average coherence score per setting.
+
+\subsubsection{Model Selection and Visualization}
+The optimal number of topics $K^*$ is determined via:
+\[
+K^* = \arg\max_K \text{Coherence}(K)
+\]
+The relationship between $K$ and the coherence score is visualized to highlight trade-offs between model complexity and interpretability.
+
+\subsection{Probabilistic Latent Semantic Analysis for Topic Discovery}
+
+To further investigate the latent thematic structure in the corpus, we employ Probabilistic Latent Semantic Analysis (PLSA), a matrix decomposition-based technique that models co-occurrence relationships between words and documents under a latent topic space. PLSA provides a probabilistic interpretation of the traditional latent semantic analysis by introducing a latent variable that accounts for topic-specific contributions to word-document associations.
+
+\subsubsection{Corpus Vectorization}
+
+We represent each document $d_i \in \mathcal{D} = \{d_1, d_2, \ldots, d_N\}$ using the TF-IDF weighting scheme to down-weight ubiquitous terms and emphasize semantically informative words. The resulting matrix:
+\[
+X \in \mathbb{R}^{N \times V}
+\]
+encodes the weighted presence of vocabulary terms across $N$ documents. Here, $X_{ij}$ denotes the TF-IDF weight of term $j$ in document $i$, and $V$ is the vocabulary size.
+
+\subsubsection{Dimensionality Reduction via TruncatedSVD}
+
+PLSA factorizes $X$ into two lower-rank matrices using truncated Singular Value Decomposition:
+\[
+X \approx U S V^\top, \quad U \in \mathbb{R}^{N \times K}, \; S \in \mathbb{R}^{K \times K}, \; V \in \mathbb{R}^{V \times K}
+\]
+\begin{itemize}
+    \item $U$: document-topic matrix, encoding the association of documents with latent topics.
+    \item $V^\top$: topic-word matrix, where each row contains weights for vocabulary terms under a given topic.
+    \item $K$: number of latent topics.
+\end{itemize}
+
+We approximate this decomposition via TruncatedSVD, retaining the top $K$ singular values and corresponding singular vectors. The decomposition is deterministic and linear, making it computationally efficient for large sparse matrices.
+
+\subsubsection{Topic Interpretation}
+
+The matrix $V^\top$ defines the contribution of each vocabulary term to the latent topics. For topic $k$, we extract the top $n=20$ words with the highest weights from the $k^\text{th}$ row of $V^\top$:
+\[
+\text{TopWords}_k = \texttt{argsort}(V_{k,:})[-n:]
+\]
+These words form the semantic signature of topic $k$ and enable human interpretation of the latent space.
+
+\subsubsection{Coherence-Based Evaluation}
+
+We evaluate the semantic quality of extracted topics using a coherence score:
+\[
+C(T_k) = \frac{2}{n(n - 1)} \sum_{i < j} \log \frac{D(w_i, w_j) + \epsilon}{D(w_j)}
+\]
+where $T_k = \{w_1, \ldots, w_n\}$ is the set of top words for topic $k$, $D(w_i, w_j)$ denotes the document co-occurrence count of terms $w_i$ and $w_j$, and $\epsilon$ is a small constant to avoid division by zero.
+
+We repeat the decomposition for $K \in \{5, 6, 7\}$, recording the average coherence score over all topics to assess the most semantically coherent configuration.
+
+\subsubsection{Model Selection}
+
+The optimal number of topics $K^*$ is selected by:
+\[
+K^* = \arg\max_K \text{Coherence}(K)
+\]
+The coherence trend is visualized across values of $K$ to analyze the stability and interpretability of topics under varying dimensionality.
+
+
+\subsection{Retrieval-Augmented Topic Naming via Large Language Models}
+
+To enhance the interpretability of the topics discovered through LDA, NMF, and PLSA, we employ a retrieval-augmented generation (RAG) framework that leverages dense embeddings and large language models (LLMs) to automatically generate descriptive topic names. This step transforms each abstract keyword cluster into a semantically meaningful label, enabling clearer insights into the latent mental health themes expressed in the corpus.
+
+\subsubsection{Embedding Topic Keywords}
+
+For each topic $T_k = \{w_1, w_2, \ldots, w_{20}\}$, we concatenate the top 20 keywords into a single comma-separated string. This composite string serves as the semantic representation of the topic:
+\[
+\text{Input}_k = w_1, w_2, \ldots, w_{20}
+\]
+We encode each string using OpenAI's \texttt{text-embedding-ada-002} model to obtain a dense semantic embedding:
+\[
+e_k = \texttt{Embed}_{\text{ada-002}}(\text{Input}_k) \in \mathbb{R}^{1536}
+\]
+These embeddings facilitate semantic similarity search and serve as input queries for topic-aware retrieval.
+
+\subsubsection{Vector Index Construction with FAISS}
+
+The topic embeddings $\{e_k\}_{k=1}^K$ are stored in a FAISS index (Facebook AI Similarity Search), which supports efficient nearest neighbor search in high-dimensional space. This infrastructure allows for quick semantic retrieval of similar topics, documents, or examples to enhance LLM-based naming via contextual grounding.
+
+\subsubsection{Automatic Topic Naming using Azure GPT-4 (32k)}
+
+To generate human-interpretable names for each topic, we employ Azure OpenAI’s GPT-4 model (with a 32k context window). For each topic $T_k$, the system performs the following steps:
+
+\begin{itemize}
+    \item \textbf{Input Construction:} The top 20 keywords for topic $T_k$ are embedded and used to retrieve semantically similar topics (if available) using FAISS.
+    
+    \item \textbf{Prompt Formulation:} A structured prompt is created, including:
+    \begin{itemize}
+        \item The 20 keywords for $T_k$
+        \item A system instruction such as: \\
+        \texttt{“Based on the following 20 keywords, generate a concise and descriptive name for this topic relevant to mental health discourse.”}
+    \end{itemize}
+    
+    \item \textbf{LLM Inference:} The prompt is sent to GPT-4, which returns a natural language phrase summarizing the essence of the topic, such as \textit{“social withdrawal and isolation”} or \textit{“coping with anxiety in daily life.”}
+\end{itemize}
+
+This method grounds the generative model with local keyword information while leveraging its general knowledge and contextual fluency, resulting in consistent, interpretable topic labels.
+
+\documentclass{article}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{margin=1in}
+
+\title{Supervised Learning Using Convolutional Neural Networks}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\subsection{Supervised Learning Using Convolutional Neural Networks}
+
+To model the relationship between user-submitted mental health-related text and diagnostic labels, we explore three supervised learning architectures based on Convolutional Neural Networks (CNNs). These architectures differ in how they utilize the learned representations: (i) standalone classification, (ii) hybrid with traditional ML classifiers, and (iii) ensemble with soft decision-based modules. In all cases, input texts are encoded using Word2Vec embeddings, and models are trained using cross-entropy or hinge loss, depending on the architecture.
+
+\subsubsection{Preprocessing and Input Representation}
+
+Each input document \( d_i \in D = \{ d_1, d_2, \ldots, d_N \} \) is preprocessed via:
+
+\begin{itemize}
+  \item Lowercasing
+  \item Stopword and punctuation removal
+  \item Tokenization using \texttt{gensim.simple\_preprocess}
+\end{itemize}
+
+We then embed each token \( w_j \) using the pretrained word2vec-google-news-300 model. A document is represented as the average of its constituent word vectors:
+
+\[
+v_{d_i} = \frac{1}{|T_i|} \sum_{w_j \in T_i \cap V} v_{w_j} \in \mathbb{R}^{300}
+\]
+
+where \( T_i \) is the token set for document \( i \), and \( V \) is the Word2Vec vocabulary.
+
+\subsubsection{CNN Architectures}
+
+\paragraph{Baseline CNN Classifier}
+
+The first model is a standard CNN classifier, directly applied to the input document vector.
+
+Let \( x \in \mathbb{R}^{300} \) be the input embedding for a document. The CNN model reshapes this vector for 1D convolution:
+
+\[
+x' = \text{unsqueeze}(x) \in \mathbb{R}^{1 \times 300}
+\]
+
+We then apply two convolutional layers:
+
+\[
+\text{Conv1D}_1: \mathbb{R}^{1 \times 300} \rightarrow \mathbb{R}^{64 \times 300}
+\]
+\[
+\text{Conv1D}_2: \mathbb{R}^{64 \times 300} \rightarrow \mathbb{R}^{128 \times 300}
+\]
+
+Each layer is followed by BatchNorm and ReLU:
+
+\[
+h_1 = \text{ReLU}(\text{BN}_1(\text{Conv1D}_1(x')))
+\]
+\[
+h_2 = \text{ReLU}(\text{BN}_2(\text{Conv1D}_2(h_1)))
+\]
+
+An adaptive average pooling layer reduces the feature map:
+
+\[
+z = \text{AvgPool}(h_2) \in \mathbb{R}^{128}
+\]
+
+Finally, a fully connected layer maps to class logits:
+
+\[
+o = Wz + b, \quad o \in \mathbb{R}^C
+\]
+
+The model is trained to minimize the categorical cross-entropy loss:
+
+\[
+L_{CE} = -\sum_{c=1}^C y_c \log \hat{y}_c
+\]
+
+\paragraph{CNN Feature Extractor + Traditional Classifiers}
+
+In the second approach, we use the CNN as a feature extractor, followed by classical classifiers including:
+
+\begin{itemize}
+  \item Support Vector Machines (SVM)
+  \item Decision Trees (DT)
+  \item Random Forests (RF)
+\end{itemize}
+
+\textbf{Procedure:}
+
+\begin{itemize}
+  \item CNN is trained as in the baseline model.
+  \item The output before the final FC layer (i.e., the pooled vector \( z \in \mathbb{R}^{128} \)) is extracted.
+  \item These vectors are used to train separate classifiers:
+    \begin{itemize}
+      \item SVM with linear kernel
+      \item Decision Tree Classifier
+      \item Random Forest Classifier with 100 trees
+    \end{itemize}
+\end{itemize}
+
+Let \( f_{\text{cnn}}: x \rightarrow z \) be the feature extractor. The classifiers learn:
+
+\[
+\hat{y} = g(z) \quad \text{where } g \in \{ \text{SVM}, \text{DT}, \text{RF} \}
+\]
+
+Prediction accuracy is evaluated on the held-out test set using standard \texttt{sklearn} metrics.
+
+\paragraph{CNN + Soft Tree-Based Ensembles}
+
+In the third architecture, we combine the CNN feature extractor with differentiable decision-based models: soft decision trees, soft random forests, and a soft SVM. These are implemented as custom neural modules that are trained end-to-end.
+
+\textbf{(a) CNN + Soft Decision Tree}
+
+Let \( z = f_{\text{cnn}}(x) \in \mathbb{R}^{128} \) be the CNN-derived feature vector.
+
+The soft tree computes decision weights:
+
+\[
+d = \sigma(W_{\text{int}} z + b_{\text{int}}) \in \mathbb{R}^T
+\]
+
+where \( T \) is the number of internal (soft) nodes, and \( \sigma \) is the sigmoid function.
+
+Leaf outputs are computed via a linear transformation:
+
+\[
+o = W_{\text{leaf}} d + b_{\text{leaf}}
+\]
+
+The model is trained using cross-entropy loss.
+
+\textbf{(b) CNN + Soft Random Forest}
+
+The soft random forest consists of \( N \) parallel soft decision trees, each of depth \( D \), parameterized by fully connected layers followed by sigmoid activations. For input \( z \), each tree \( i \) outputs:
+
+\[
+t_i = \sigma(W_i z + b_i) \in \mathbb{R}^{2^D}
+\]
+
+All outputs are concatenated:
+
+\[
+t = [t_1 \parallel t_2 \parallel \cdots \parallel t_N] \in \mathbb{R}^{N \cdot 2^D}
+\]
+
+Final classification:
+
+\[
+o = W_{\text{out}} t + b_{\text{out}} \in \mathbb{R}^C
+\]
+
+\textbf{(c) CNN + Soft SVM}
+
+This variant integrates a hinge-loss-based Soft SVM head on top of the CNN encoder:
+
+\[
+o = W_{\text{svm}} z + b_{\text{svm}}
+\]
+
+Training objective uses the multi-class hinge loss:
+
+\[
+L_{\text{hinge}} = \frac{1}{N} \sum_{i=1}^N \sum_{j \ne y_i} \max(0, 1 - o_{y_i} + o_j)
+\]
+
+where \( o_j \) is the logit for class \( j \), and \( y_i \) is the true label.
+
+\subsubsection{Training Details}
+
+All CNN-based models are trained for 10 epochs using the Adam optimizer with learning rate \( \eta = 0.001 \).
+
+\begin{itemize}
+  \item Batch size: 32 (standard CNN), 64 (ensembles)
+  \item Loss: \texttt{CrossEntropyLoss} (most models), \texttt{HingeLoss} (soft SVM)
+  \item Hardware: CUDA-compatible GPU
+\end{itemize}
+
+\subsubsection{Summary}
+
+Each of the three CNN-based models targets a different supervised learning strategy:
+
+\begin{itemize}
+  \item \textbf{Baseline CNN} learns end-to-end from embeddings to classification.
+  \item \textbf{CNN + traditional ML} decouples representation learning from classification.
+  \item \textbf{CNN + soft trees} implements structured, interpretable, and differentiable ensembles that blend deep learning with symbolic reasoning.
+\end{itemize}
+
+These variants provide a spectrum of trade-offs between end-to-end optimization, interpretability, and representational expressiveness.
+
+\subsection{Supervised Learning Using Long Short-Term Memory Networks (LSTM)}
+
+To model the temporal and contextual dependencies within mental health-related text, we employ a Long Short-Term Memory (LSTM) based neural architecture. LSTMs are a form of recurrent neural networks (RNNs) designed to mitigate vanishing gradient issues, making them well-suited for modeling long-term dependencies in sequential data such as text.
+
+\subsubsection{Input Representation}
+Let the corpus be $D = \{d_1, d_2, \ldots, d_N\}$, where each document $d_i$ is a variable-length sequence of tokens. Each token $w_j \in d_i$ is mapped to a dense vector using the pretrained Word2Vec (Google News) embeddings: $v_{w_j} \in \mathbb{R}^{300}$. Thus, each document becomes a sequence:
+
+\[
+X_i = [v_{w_1}, v_{w_2}, \ldots, v_{w_T}] \in \mathbb{R}^{T \times 300}
+\]
+
+where $T$ is the length of the document (padded/truncated to a fixed max length during batching).
+
+\subsubsection{LSTM Architecture}
+We use a single-layer unidirectional LSTM to model the sequence of token embeddings. The LSTM updates its hidden state at each time step $t \in \{1, \ldots, T\}$ using the following equations:
+
+\begin{align*}
+i_t &= \sigma(W_i x_t + U_i h_{t-1} + b_i) \quad \text{(input gate)} \\
+f_t &= \sigma(W_f x_t + U_f h_{t-1} + b_f) \quad \text{(forget gate)} \\
+o_t &= \sigma(W_o x_t + U_o h_{t-1} + b_o) \quad \text{(output gate)} \\
+\tilde{c}_t &= \tanh(W_c x_t + U_c h_{t-1} + b_c) \quad \text{(cell candidate)} \\
+c_t &= f_t \odot c_{t-1} + i_t \odot \tilde{c}_t \quad \text{(cell state)} \\
+h_t &= o_t \odot \tanh(c_t) \quad \text{(hidden state)}
+\end{align*}
+
+Where:
+- $x_t \in \mathbb{R}^{300}$: token embedding at time $t$
+- $h_t, c_t \in \mathbb{R}^{H}$: hidden and cell states (with hidden size $H$)
+- $\odot$: element-wise multiplication
+- $\sigma$: sigmoid activation
+- $W, U, b$: trainable parameters
+
+\subsubsection{Document Representation and Classification}
+We extract the final hidden state $h_T$ of the LSTM as a summary representation of the input document:
+
+\[
+z_i = h_T \in \mathbb{R}^{H}
+\]
+
+This vector is passed through a fully connected classification layer:
+
+\[
+o_i = W_{\text{cls}} z_i + b_{\text{cls}} \in \mathbb{R}^{C}
+\]
+
+where $C$ is the number of output classes (e.g., binary classification for mental health status). The predicted probabilities are obtained via softmax:
+
+\[
+\hat{y}_i = \text{softmax}(o_i)
+\]
+
+\subsubsection{Objective Function}
+The model is trained to minimize the categorical cross-entropy loss:
+
+\[
+L_{\text{CE}} = - \sum_{i=1}^{N} \sum_{c=1}^{C} y_{ic} \log(\hat{y}_{ic})
+\]
+
+where $y_{ic} \in \{0,1\}$ is the ground-truth indicator for class $c$ in example $i$.
+
+\subsubsection{Implementation Details}
+
+\textbf{Embedding:} Pretrained Word2Vec (300d); zero-padding for short sequences; truncation for long sequences
+
+\textbf{LSTM Configuration:}
+\begin{itemize}
+  \item Hidden size: 128
+  \item Layers: 1
+  \item Dropout: optional, typically 0.3
+\end{itemize}
+
+\textbf{Training:}
+\begin{itemize}
+  \item Optimizer: Adam
+  \item Learning rate: 0.001
+  \item Epochs: 10
+  \item Loss: CrossEntropyLoss
+  \item Batch size: 32
+  \item Evaluation: Accuracy on held-out test set
+\end{itemize}
+
+\subsubsection*{Summary}
+The LSTM architecture offers the ability to preserve sequential dependencies and semantic context in mental health-related text, which may be crucial for nuanced patterns such as emotional shifts, expressions of distress, and temporal reasoning. Unlike the CNN, which emphasizes local n-gram patterns, the LSTM explicitly models the order and recurrence of language tokens, making it particularly suited for capturing long-range dependencies in user-generated text.
+
+\subsection{Methodology: Supervised Learning Using Transformer-Based Models}
+
+To capture complex dependencies and global contextual cues in free-form mental health-related text, we employ a Transformer-based architecture. Transformers use self-attention mechanisms to model relationships between all tokens in a sequence simultaneously, making them well-suited for learning semantic structure across varying lengths and contexts.
+
+\subsubsection*{1. Input Representation}
+
+Let each input document $d_i \in D = \{d_1, d_2, \dots, d_N\}$ be a sequence of $T$ tokens:
+
+\[
+d_i = [w_1, w_2, \dots, w_T]
+\]
+
+We embed each token using a pretrained transformer tokenizer and embedding matrix, such as BERT or RoBERTa:
+
+\[
+X_i = [e_{w_1}, e_{w_2}, \dots, e_{w_T}] \in \mathbb{R}^{T \times d}
+\]
+
+where $e_{w_j} \in \mathbb{R}^d$ is the token embedding of dimension $d$ (e.g., 768 for BERT-base).
+
+In addition, a learned positional encoding $P \in \mathbb{R}^{T \times d}$ is added to retain word order:
+
+\[
+Z_i = X_i + P
+\]
+
+\subsubsection*{2. Transformer Encoder}
+
+We apply a stack of $L$ transformer encoder layers to the sequence $Z_i$. Each layer consists of:
+
+\begin{itemize}
+    \item Multi-head self-attention
+    \item Feedforward network
+    \item Layer normalization and residual connections
+\end{itemize}
+
+\paragraph{2.1 Multi-head Self-Attention}
+
+Given input matrix $Z \in \mathbb{R}^{T \times d}$, the attention mechanism computes:
+
+\[
+\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{QK^\top}{\sqrt{d_k}} \right)V
+\]
+
+Each head $h$ learns its own query, key, and value projections:
+
+\[
+Q_h = ZW_h^Q,\quad K_h = ZW_h^K,\quad V_h = ZW_h^V
+\]
+
+With $H$ heads, the outputs are concatenated:
+
+\[
+\text{MultiHead}(Z) = [\text{head}_1;\dots;\text{head}_H]W^O
+\]
+
+\paragraph{2.2 Feedforward Network}
+
+Each token vector is then passed through a two-layer position-wise feedforward network:
+
+\[
+\text{FFN}(x) = \text{ReLU}(xW_1 + b_1)W_2 + b_2
+\]
+
+The output of each encoder layer is computed as:
+
+\[
+Z^{(l+1)} = \text{LayerNorm}\left(Z^{(l)} + \text{FFN}(\text{MultiHead}(Z^{(l)}))\right)
+\]
+
+\subsubsection*{3. Objective Function}
+
+The model is trained using categorical cross-entropy loss:
+
+\[
+\mathcal{L}_{CE} = -\sum_{i=1}^{N} \sum_{c=1}^{C} y_{ic} \log(\hat{y}_{ic})
+\]
+
+where $y_{ic} \in \{0, 1\}$ is the ground-truth indicator for class $c$ in example $i$, and $\hat{y}_{ic}$ is the predicted probability for class $c$.
+
+\subsubsection*{4. Implementation Details}
+
+\begin{itemize}
+    \item \textbf{Model:} Pretrained transformer (e.g., BERT-base, RoBERTa-base)
+    \item \textbf{Embedding dimension:} $d = 768$
+    \item \textbf{Max sequence length:} 128 or 256 tokens
+    \item \textbf{Dropout:} 0.1 between layers
+    \item \textbf{Optimizer:} AdamW
+    \item \textbf{Learning rate:} 2e-5
+    \item \textbf{Batch size:} 16 or 32
+    \item \textbf{Epochs:} 3–5 (with early stopping)
+    \item \textbf{Fine-tuning:} All transformer layers are updated during training
+\end{itemize}
+
+\subsubsection*{Summary}
+
+Transformer-based models offer a powerful framework for understanding free-form mental health text by leveraging global self-attention and contextualized token representations. Unlike CNNs and LSTMs, which capture local or sequential dependencies, transformers model all token relationships jointly, enabling precise detection of nuanced language patterns and thematic structure crucial in mental health discourse.
+
+
+\begin{center}
+    \section{Results}
+\end{center}
+\subsection{Unsupervised Learning}
+
+To uncover latent themes in the mental health text corpus, we employed three unsupervised topic modeling techniques—\textbf{Latent Dirichlet Allocation (LDA)}, \textbf{Non-negative Matrix Factorization (NMF)}, and \textbf{Probabilistic Latent Semantic Analysis (PLSA)}. The models were evaluated based on the \textit{topic coherence score}, a widely used metric measuring the semantic consistency of the top keywords within each topic. To improve interpretability, the top 20 keywords for each topic were fed into a Large Language Model (Azure GPT-4) via a Retrieval-Augmented Generation (RAG) setup to generate descriptive topic names.
+
+\subsubsection{Latent Dirichlet Allocation (LDA)}
+
+A grid search was performed over different values of the document-topic prior $\alpha \in \{0.01, 0.51, 1.00\}$, with the number of topics fixed at $K=7$. The optimal coherence score of \textbf{0.5068} was obtained for $\alpha=1.00$, indicating improved interpretability with a symmetric prior. Figure~\ref{fig:lda-coherence} illustrates the relationship between $\alpha$ and coherence.
+
+
+\vspace{0.5em}
+\noindent\textbf{Top keywords per topic and corresponding LLM-generated labels:}
+
+\begin{table}[ht]
+    \centering
+    \small
+    \begin{tabular}{|c|p{10cm}|c|}
+        \hline
+        \textbf{Topic} & \textbf{Top 10 Keywords} & \textbf{LLM-Generated Label} \\
+        \hline
+        1 & year, really, mental, time, wa, know, ve, help, don, depression & Mental Health \& Depression \\
+        2 & money, things, like, good, friends, time, school, job, work, people & Social Life \& Financial Concerns \\
+        3 & shit, kill, end, hate, die, fucking, live, just, want, life & Suicidal Ideation \& Anger \\
+        4 & wanted, time, family, mom, said, years, friend, told, got, did & Family \& Personal Relationships \\
+        5 & feeling, things, think, anymore, really, want, know, feel, like, just & Emotional Well-being \& Self-reflection \\
+        6 & feeling, panic, like, time, symptoms, doctor, pain, heart, stress, anxiety & Anxiety \& Physical Symptoms \\
+        7 & thats, morning, night, today, bipolar, didnt, sleep, ive, dont, im & Bipolar Disorder \& Sleep Issues \\
+        \hline
+    \end{tabular}
+    \caption{LDA topics: Top keywords and LLM-generated topic labels ($K=7$, $\alpha=1.00$).}
+    \label{tab:lda-topics}
+\end{table}
+
+\subsubsection{Non-negative Matrix Factorization (NMF)}
+
+Using a TF-IDF vectorizer, we evaluated coherence scores for $K \in \{5,6,7\}$. The best score of \textbf{0.5107} was achieved at $K=7$, outperforming both LDA and PLSA. The U-shaped curve in Figure~\ref{fig:nmf-coherence} suggests that the model is sensitive to topic granularity.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{nmf.png}
+    \caption{Coherence scores for NMF model across different numbers of topics.}
+    \label{fig:nmf-coherence}
+\end{figure}
+
+\vspace{0.5em}
+\noindent\textbf{Top keywords and GPT-4-generated topic labels is given in table 3.}
+
+\usepackage{tabularx}  % Include this in your preamble
+
+\begin{table}[h!]
+    \centering
+    \caption{NMF topics: Top keywords and LLM-generated labels ($K=7$).}
+    \label{tab:nmf-topics}
+    \begin{tabularx}{\textwidth}{c X X}
+        \hline
+        \textbf{Topic} & \textbf{Representative Keywords} & \textbf{LLM-Generated Label} \\
+        \hline
+        1 & anymore, good, better, kill, love, hate, people, life, live, think & Major Depression, Suicidal Ideation \\
+        2 & anxious, bipolar, sorry, worried, nervous, scared, restless, ive, im & Generalized Anxiety Disorder (GAD), Bipolar Disorder \\
+        3 & make, suicide, scared, sleep, pain, talk, help, kill, die, want & Severe Depression, Suicidal Ideation \\
+        4 & sad, happy, friends, depressed, time, people, feeling, like & Depression, Mood Disorders \\
+        5 & job, years, started, depression, work, anxiety, really, going & Work-related Stress, Burnout, Anxiety Disorders \\
+        6 & ask, wont, understand, anymore, worry, people, think & GAD, OCD \\
+        7 & sleep, wake, talk, wish, tired, stop, day & Insomnia, Depression, Chronic Fatigue \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+
+\subsubsection{Probabilistic Latent Semantic Analysis (PLSA)}
+
+PLSA was implemented using TruncatedSVD on TF-IDF vectors. Coherence scores were computed for $K \in \{5,6,7\}$, with the highest score of \textbf{0.4816} obtained at $K=6$. As shown in Figure~\ref{fig:plsa-coherence}, PLSA exhibited relatively lower topic consistency compared to LDA and NMF.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{plsa.png}
+    \caption{Coherence scores for PLSA model across different numbers of topics.}
+    \label{fig:plsa-coherence}
+\end{figure}
+
+\vspace{0.5em}
+\noindent\textbf{LLM-generated topic interpretations based on top 20 keywords is given in table 4.}
+\begin{table}[h!]
+    \centering
+    \caption{PLSA topics: Top keywords and LLM-generated labels ($K=6$).}
+    \label{tab:nmf-topics-2}
+    \begin{tabularx}{\textwidth}{c X X}
+        \hline
+        \textbf{Topic} & \textbf{Representative Keywords} & \textbf{LLM-Generated Label} \\
+        \hline
+        1 & better, feeling, did, friends, things, help, anymore, day, think, going, im, time, people, really, life, know, want, feel, like, just & Depression, Emotional Distress \\
+        2 & doctor, having, doesnt, started, time, anxious, stress, work, nervous, symptoms, like, thats, didnt, bipolar, worried, really, anxiety, ive, dont, im & Anxiety Disorders, Bipolar Disorder, Work-related Stress \\
+        3 & ill, nervous, doesnt, end, stop, restless, fuck, sleep, live, hate, ive, anymore, just, fucking, kill, tired, die, dont, im, want & Suicidal Ideation, Severe Depression, Restlessness \\
+        4 & people, emotions, guilty, burden, anymore, numb, lonely, happy, restless, tired, sad, makes, just, want, feeling, feels, im, dont, like, feel & Depression, Loneliness, Emotional Numbness \\
+        5 & health, ll, doctor, didn, panic, feeling, ha, depression, need, feel, talk, wa, help, really, anxiety, ve, know, dont, don, want & Panic Disorder, Depression, Generalized Anxiety Disorder (GAD) \\
+        6 & make, suicide, live, good, family, care, things, friend, person, say, really, talk, think, love, friends, did, life, know, people, dont & Suicidal Ideation, Depression, Existential Distress \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+\subsubsection{Comparative Summary}
+
+\begin{table}[ht]
+    \centering
+    \small
+    \begin{tabular}{|l|c|c|p{6cm}|}
+        \hline
+        \textbf{Method} & \textbf{Best $K$} & \textbf{Coherence Score} & \textbf{Most Distinct Topic} \\
+        \hline
+        LDA  & 7 & 0.5068 & Suicidal Ideation \& Anger \\
+        NMF  & 7 & \textbf{0.5107} & Work-related Stress, Burnout \\
+        PLSA & 6 & 0.4816 & Panic Disorder, Depression \\
+        \hline
+    \end{tabular}
+    \caption{Summary of unsupervised topic modeling results.}
+    \label{tab:comparative-summary}
+\end{table}
+
+\noindent\textbf{Key observations:}
+\begin{itemize}
+    \item \textbf{NMF outperformed} LDA and PLSA in coherence score and topic interpretability.
+    \item \textbf{LDA} generated well-separated topics with clean keyword groupings.
+    \item \textbf{PLSA}, though conceptually simpler, yielded less distinct semantic separability.
+    \item \textbf{LLM integration} significantly improved the human interpretability of the generated topics by converting sparse keyword clusters into clinically relevant categories.
+\end{itemize}
+\subsection{Supervised Learning}
+
+To evaluate the efficacy of machine learning models for classifying user-generated mental health text, we conducted a series of supervised experiments using three neural architectures---\textbf{Convolutional Neural Networks (CNNs)}, \textbf{Long Short-Term Memory Networks (LSTMs)}, and \textbf{Transformer-based encoders}. Each architecture was tested across three paradigms:
+
+\begin{itemize}
+    \item \textbf{Baseline}: End-to-end neural classification.
+    \item \textbf{Feature Extractor + Classical Classifiers}: Using the frozen neural encoder as a feature extractor followed by SVM, Decision Tree, and Random Forest.
+    \item \textbf{Feature Extractor + Differentiable Soft Classifiers}: End-to-end training with interpretable soft decision modules such as Soft SVM, Soft Decision Trees, and Soft Random Forests.
+\end{itemize}
+
+All experiments used \textbf{Word2Vec-GoogleNews embeddings} as input, and classification accuracy on the \textbf{held-out test set} was used as the primary evaluation metric.
+
+\subsubsection{CNN-Based Models}
+
+CNNs are designed to capture local n-gram patterns and were tested with shallow convolutional layers followed by global average pooling.
+
+\paragraph{Results Summary:}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Model Variant} & \textbf{Test Accuracy} \\
+\hline
+\textbf{CNN Baseline} & 35.55\% \\
+CNN + SVM & 59.00\% \\
+CNN + Decision Tree & 49.00\% \\
+CNN + Random Forest & 61.00\% \\
+CNN + Soft SVM & 58.40\% \\
+CNN + Soft Decision Tree & 56.80\% \\
+\textbf{CNN + Soft Random Forest} & \textbf{62.75\%} \\
+\hline
+\end{tabular}
+\caption{Test accuracy of CNN-based model variants.}
+\label{tab:cnn_results}
+\end{table}
+
+\paragraph{Analysis:}
+
+\begin{itemize}
+    \item The \textbf{baseline CNN model}, trained end-to-end, performed poorly (35.55\%), likely due to the loss of token order information and the limitation of using fixed-size average embeddings.
+    \item Classical classifiers trained on CNN features significantly improved accuracy. Among them, \textbf{Random Forest} achieved the best result (61.00\%) by leveraging feature redundancy and ensembling.
+    \item The \textbf{Soft Random Forest} surpassed all CNN variants (62.75\%), showing that differentiable ensemble methods can better exploit CNN-learned representations while allowing gradient flow through structured decisions.
+\end{itemize}
+
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{output (1).png}
+    \caption{Accuracy across different models and ensembles.}
+    \label{fig:plsa-coherence}
+\end{figure}
+
+\subsection{LSTM-Based Models}
+
+LSTMs are well-suited for modeling sequential dependencies and emotional transitions in text, which are crucial for mental health inference.
+
+\paragraph{Results Summary:}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Model Variant} & \textbf{Test Accuracy} \\
+\hline
+\textbf{LSTM Baseline} & 73.14\% \\
+LSTM + SVM & 73.00\% \\
+LSTM + Decision Tree & 62.00\% \\
+\textbf{LSTM + Random Forest} & \textbf{75.00\%} \\
+LSTM + Soft SVM & 72.50\% \\
+LSTM + Soft Decision Tree & 71.74\% \\
+LSTM + Soft Random Forest & 65.87\% \\
+\hline
+\end{tabular}
+\caption{Test accuracy of LSTM-based model variants.}
+\label{tab:lstm_results}
+\end{table}
+
+\paragraph{Analysis:}
+
+\begin{itemize}
+    \item The \textbf{baseline LSTM} model performed strongly, achieving \textbf{73.14\%}, demonstrating its capacity to model temporal dependencies in mental health discourse.
+    \item Using LSTM as a frozen encoder and training classical classifiers preserved performance, especially with \textbf{Random Forest} achieving \textbf{75.00\%}, the highest across all models.
+    \item \textbf{Soft classifiers} performed competitively, especially \textbf{Soft SVM (72.50\%)} and \textbf{Soft Decision Tree (71.74\%)}, reflecting the benefit of integrating sequential learning with interpretable end layers.
+    \item The \textbf{Soft Random Forest}, while conceptually powerful, underperformed slightly (65.87\%), suggesting overparameterization or vanishing gradients when stacked with recurrent models.
+\end{itemize}
+
+\subsubsection{Transformer-Based Models}
+
+Transformers, leveraging self-attention mechanisms, can model global token dependencies and contextual relationships—critical for nuanced mental health patterns.
+
+\paragraph{Results Summary:}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Model Variant} & \textbf{Test Accuracy} \\
+\hline
+\textbf{Transformer Baseline} & 69.77\% \\
+Transformer + SVM & 74.00\% \\
+Transformer + Decision Tree & 70.00\% \\
+\textbf{Transformer + Random Forest} & \textbf{75.00\%} \\
+Transformer + Soft SVM & 71.80\% \\
+Transformer + Soft Decision Tree & 66.17\% \\
+Transformer + Soft Random Forest & 69.51\% \\
+\hline
+\end{tabular}
+\caption{Test accuracy of Transformer-based model variants.}
+\label{tab:transformer_results}
+\end{table}
+
+\paragraph{Analysis:}
+
+\begin{itemize}
+    \item The \textbf{baseline Transformer} achieved \textbf{69.77\%}, consistent with prior work demonstrating that attention mechanisms can uncover semantically rich document-level embeddings.
+    \item Classical classifiers showed consistent improvements when applied to Transformer-extracted embeddings. \textbf{Random Forest again matched the best LSTM variant at 75.00\%}.
+    \item \textbf{Soft SVM} performed well (71.80\%), likely due to its compatibility with Transformer-encoded spaces. However, \textbf{Soft Decision Tree and Soft Random Forest} lagged behind, indicating either insufficient training signal or overfitting in the differentiable ensemble layers.
+\end{itemize}
+
+\subsubsection{Cross-Architecture Comparison}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{|l|l|c|}
+\hline
+\textbf{Architecture} & \textbf{Best Variant} & \textbf{Test Accuracy} \\
+\hline
+\textbf{CNN} & CNN + Soft Random Forest & 62.75\% \\
+\textbf{LSTM} & LSTM + Random Forest & \textbf{75.00\%} \\
+\textbf{Transformer} & Transformer + Random Forest & \textbf{75.00\%} \\
+\hline
+\end{tabular}
+\caption{Best performing variants across architectures.}
+\label{tab:cross_architecture}
+\end{table}
+
+\paragraph{Key Takeaways:}
+
+\begin{itemize}
+    \item \textbf{CNNs are less effective} than sequential or attention-based models for this task, primarily due to their inability to model token dependencies.
+    \item \textbf{LSTMs and Transformers} achieved near-identical top performance, indicating their ability to generalize across linguistic nuances in mental health text.
+    \item \textbf{Random Forest classifiers}, when trained on deep neural embeddings, consistently yielded the highest accuracy across all model families.
+    \item \textbf{Differentiable soft classifiers} provided competitive performance, and offer greater interpretability and end-to-end learnability, especially for SVM and Decision Tree variants.
+\end{itemize}
+
+\begin{center}
+    \section{Discussion}
+\end{center}
+
+The experiments conducted in this study span both \textbf{unsupervised} and \textbf{supervised} learning approaches to classify and understand mental health issues from user-submitted text. The findings highlight the strengths and limitations of various models in this sensitive and complex domain, where language tends to be short, emotionally laden, and semantically ambiguous.
+
+\subsection{Insights from Unsupervised Learning}
+
+We employed three topic modeling methods—\textbf{Latent Dirichlet Allocation (LDA)}, \textbf{Non-negative Matrix Factorization (NMF)}, and \textbf{Probabilistic Latent Semantic Analysis (PLSA)}—to discover latent themes in mental health discourse. The results offer several noteworthy observations:
+
+\begin{itemize}
+    \item \textbf{Coherence scores} (a proxy for topic quality) indicated that \textbf{NMF (0.5107)} slightly outperformed \textbf{LDA (0.5068)} and significantly outperformed \textbf{PLSA (0.4816)}. This suggests that matrix factorization methods such as NMF may be better suited for capturing low-rank latent structures in short, noisy text.
+    \item \textbf{LDA}, although probabilistic, produced highly interpretable topics when optimized for $\alpha$ and $K$. Its generative nature provided better diversity and separation of topics related to depression, anxiety, suicidal ideation, and family dynamics.
+    \item \textbf{PLSA}, being a simpler SVD-based model, generated semantically weaker topics with lower coherence and more overlapping word clusters.
+\end{itemize}
+
+Crucially, we passed the \textbf{top 20 keywords} from each topic to a \textbf{Large Language Model (Azure GPT-4)} using a \textbf{retrieval-augmented generation (RAG)} pipeline. The LLM successfully transformed raw keyword clusters into high-level diagnostic categories such as ``Bipolar Disorder \& Sleep Issues'' or ``Suicidal Ideation \& Existential Distress.'' This step bridged the gap between statistical topic modeling and human-interpretable themes, showing the value of LLMs for \textbf{semantic enrichment and post hoc interpretability}.
+
+\subsection{Supervised Learning: End-to-End vs Modular Designs}
+
+In the supervised learning pipeline, we explored three model families—\textbf{CNNs, LSTMs, and Transformers}—each evaluated under three paradigms: end-to-end classification, classical classifier pipelines, and hybrid differentiable classifiers.
+
+\subsubsection{CNNs Struggle with Semantically Complex Text}
+
+\begin{itemize}
+    \item The \textbf{baseline CNN} model yielded the lowest performance (35.55\%), primarily due to its limited context window and reliance on static Word2Vec embeddings. It lacked the ability to model \textbf{global dependencies} or emotional shifts within sentences, which are common in mental health narratives.
+    \item Using CNNs as \textbf{feature extractors}, however, significantly improved performance when combined with SVM (59.00\%) and Random Forest (61.00\%). The best result (62.75\%) came from the \textbf{CNN + Soft Random Forest}, which leveraged learnable ensemble mechanisms in an end-to-end fashion.
+\end{itemize}
+
+\subsubsection{LSTMs Model Temporal and Emotional Dependencies}
+
+\begin{itemize}
+    \item The \textbf{baseline LSTM} already performed well (73.14\%), validating that \textbf{recurrent memory mechanisms} effectively capture the structure and intensity of mental health disclosures.
+    \item A frozen LSTM encoder paired with \textbf{Random Forest} further improved performance to \textbf{75.00\%}, indicating that \textbf{neural representations contain rich, generalizable patterns} which classical classifiers can exploit.
+    \item Among soft classifiers, \textbf{Soft SVM (72.50\%)} and \textbf{Soft Decision Tree (71.74\%)} performed strongly, offering interpretability and end-to-end learning benefits.
+\end{itemize}
+
+\subsubsection{Transformers Generalize Well, Especially with Ensembles}
+
+\begin{itemize}
+    \item The \textbf{Transformer baseline} achieved 69.77\%, slightly behind LSTM, but benefitted greatly from classical classifiers like \textbf{Random Forest (75.00\%)} and \textbf{SVM (74.00\%)}.
+    \item This confirms that \textbf{contextualized embeddings produced by Transformers are highly separable}, allowing non-deep classifiers to perform well.
+    \item Among hybrid models, \textbf{Transformer + Soft SVM (71.80\%)} outperformed Soft Random Forest and Soft Decision Tree variants, again reinforcing that \textbf{margin-based separation} works well with dense contextual features.
+\end{itemize}
+
+\subsection{Comparative Insights and Design Implications}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|c|}
+\hline
+\textbf{Category} & \textbf{Best Variant} & \textbf{Accuracy (\%)} \\
+\hline
+Unsupervised & NMF + LLM Topic Naming & N/A (Qualitative) \\
+CNN & CNN + Soft Random Forest & 62.75 \\
+LSTM & LSTM + Random Forest & \textbf{75.00} \\
+Transformer & Transformer + Random Forest & \textbf{75.00} \\
+\hline
+\end{tabular}
+\caption{Comparative model performance}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{Unsupervised modeling} provided valuable qualitative insights into thematic structures and diagnostic groupings, which could be used for label design, weak supervision, or clustering-based screening.
+    \item \textbf{Supervised learning models}, especially \textbf{LSTM and Transformer with classical classifiers}, achieved state-of-the-art test accuracy. This suggests a \textbf{modular pipeline}—deep representation learning followed by interpretable classifiers—strikes the best balance between accuracy and extensibility.
+    \item \textbf{Hybrid soft classifiers}, while slightly less performant, offer \textbf{greater transparency} and can be further refined for decision auditing or fairness analysis in clinical applications.
+\end{itemize}
+
+\subsection{Broader Reflections}
+
+\begin{itemize}
+    \item Our results demonstrate that \textbf{task-specific embedding quality and model modularity} are more important than deep network depth.
+    \item In resource-constrained settings (e.g., where LLM inference is expensive), combining pretrained neural feature extractors with simple ensemble classifiers provides a scalable and interpretable alternative.
+    \item Additionally, \textbf{LLM-based topic labeling} for unsupervised methods provides a promising direction for hybrid NLP pipelines, merging statistical learning with generative reasoning.
+\end{itemize}
+
+\begin{center}
+    \section{Conclusion and Future Work}
+\end{center}
+
+\subsection{Conclusion}
+
+This study explored the use of unsupervised and supervised machine learning techniques to detect and understand mental health conditions based on short user-submitted texts. Given the increasing prevalence of digital expressions of psychological distress, our goal was to create an interpretable and accurate system capable of modeling such data effectively.
+
+In the \textbf{unsupervised phase}, we applied three topic modeling techniques—\textbf{LDA, NMF, and PLSA}—to extract latent themes from the corpus. Among these, \textbf{NMF produced the highest coherence score (0.5107)} and the most semantically consistent topics. To overcome the interpretability gap inherent to unsupervised methods, we integrated \textbf{LLM-based topic labeling} via GPT-4, enabling the conversion of keyword clusters into clinically meaningful diagnostic categories. This hybrid pipeline proved essential for making unsupervised output intelligible and actionable in mental health contexts.
+
+In the \textbf{supervised phase}, we systematically compared \textbf{CNN}, \textbf{LSTM}, and \textbf{Transformer} models across three configurations: end-to-end classification, feature extraction + traditional classifiers, and feature extraction + soft classifiers. Our findings revealed that:
+
+\begin{itemize}
+    \item \textbf{LSTM + Random Forest} and \textbf{Transformer + Random Forest} both achieved the highest test accuracy of \textbf{75.00\%}, benefiting from rich contextual embeddings and ensemble robustness.
+    \item \textbf{CNN models underperformed} due to the lack of sequential modeling and context awareness but improved significantly with soft and traditional classifiers.
+    \item \textbf{Hybrid pipelines} combining deep feature extraction with interpretable decision models (e.g., Soft SVM or Random Forests) consistently outperformed end-to-end baselines, showing the advantage of \textbf{modular architecture design}.
+\end{itemize}
+
+Overall, the study demonstrates that combining deep neural representations with classical or interpretable classifiers yields robust and scalable solutions for mental health text classification. It also shows how \textbf{LLMs can bridge the gap between statistical learning and semantic understanding}, particularly in unsupervised settings.
+
+\subsection{Future Work}
+
+Building on these results, several avenues for future exploration are evident:
+
+\begin{enumerate}
+    \item \textbf{Incorporate Clinical Labels and Diagnostic Metadata}: Future work can incorporate real-world clinical annotations such as DSM-based diagnostic labels, therapy outcomes, or medication records. This would allow for \textbf{multi-label classification} and \textbf{longitudinal prediction of mental health trajectories}.
+    
+    \item \textbf{Leverage Contextual Embeddings from Foundation Models}: Instead of static Word2Vec embeddings, future experiments could use \textbf{sentence-level embeddings} (e.g., from BERT, RoBERTa, or OpenAI’s Ada-002) to capture finer semantic nuances. This could benefit both clustering and classification pipelines, especially in \textbf{few-shot or zero-shot} settings.
+    
+    \item \textbf{Domain Adaptation and Transfer Learning}: Fine-tuning transformer models on \textbf{domain-specific corpora} (e.g., Reddit mental health posts, therapy transcripts) could further boost performance and improve generalization to out-of-domain text. Transfer learning techniques like \textbf{adapters}, \textbf{LoRA}, or \textbf{prefix tuning} may provide low-resource customization options.
+    
+    \item \textbf{Explainability and Fairness Auditing}: Deployable mental health systems require high interpretability. Future work should evaluate models using \textbf{SHAP}, \textbf{LIME}, and \textbf{attention-based interpretability} techniques. In parallel, auditing for \textbf{biases across gender, race, and age} in classifier decisions should be integrated into the evaluation pipeline.
+    
+    \item \textbf{Conversational Modeling and Multimodal Fusion}: To more fully capture user mental states, future pipelines can incorporate \textbf{conversational context} (multi-turn chat) and \textbf{multimodal cues} (voice tone, video, physiological signals). This would require sequential and multimodal architectures (e.g., RNNs fused with CNNs or Vision Transformers) and alignment techniques.
+    
+    \item \textbf{Semi-supervised Learning with Weak Labels}: Combining LLM-generated topic labels or clustering outcomes with weak supervision (e.g., Snorkel, self-training) could extend model coverage in low-labeled settings. This aligns with real-world scenarios where expert labeling is scarce but unstructured user data is abundant.
+\end{enumerate}
+
+\noindent In conclusion, this study provides a strong foundation for automated mental health inference using both classical and neural techniques. The modular design, explainability emphasis, and hybrid use of large language models offer a flexible framework for research and deployment in clinical decision support, early intervention tools, and digital mental health applications.
+
+
+\begin{center}
+    \Large\textbf{7   \: Societal and Environmental Impact}
+\end{center}
+
+This project uses machine learning to classify and interpret mental health disorders from text, providing a scalable and easily accessible tool for early detection and treatment. From a social standpoint it raises mental health awareness and decreases stigma by allowing for proactive, data-driven support. The methodology's emphasis on interpretability promotes ethical alignment and potential inclusion into therapeutic procedures. Environmentally, while training deep learning models consumes energy, the adoption of modular and efficient architectures reduces computational overhead. This project helps to create healthier communities by allowing for early treatments, which may lower long-term healthcare costs.
+
+
+\includepdf[pages=-]{ethicsinengineeringcert.pdf} 
+
+\begin{center}
+        \section*{8 \: References}
+\end{center}
+
+\subsection*{Journal / Conference Papers}
+
+\begin{itemize}
+    \item[\textbf{[1]}] P. Resnik, W. Armstrong, L. Claudino, T. Nguyen, V. A. Nguyen, and J. Boyd-Graber, "Beyond LDA: Exploring supervised topic modeling for depression-related language in Twitter," *Proc. of the 2nd Workshop on Computational Linguistics and Clinical Psychology*, pp. 99–107, 2015.
+
+    \item[\textbf{[2]}] G. Coppersmith, R. Leary, E. Whyne, and T. Wood, "Quantifying suicidal ideation via language on social media," *J. Biomed. Inform.*, vol. 69, pp. 62–70, 2017.
+
+    \item[\textbf{[3]}] A. Benton, M. Mitchell, and D. Hovy, "Multi-task learning for mental health using social media text," *Proc. of the 15th Conf. of the European Chapter of the Association for Computational Linguistics (EACL)*, pp. 152–162, 2020.
+
+    \item[\textbf{[4]}] S. Chancellor and M. De Choudhury, "Methods in predictive techniques for mental health status on social media: A critical review," *npj Digital Medicine*, vol. 3, no. 43, 2019.
+
+    \item[\textbf{[5]}] L. Liu, P. Burnap, H. Al-Olimat, and M. L. Williams, "Combining unsupervised topic modeling and supervised learning for detecting harmful mental health content," *Proc. of the 2021 AAAI Conf. on Web and Social Media (ICWSM)*, pp. 256–267, 2021.
+
+    \item[\textbf{[6]}] A. Zirikly, P. Resnik, Ö. Uzuner, and K. Hollingshead, "CLPsych 2019 Shared Task: Predicting the degree of suicide risk in Reddit posts," *Proc. of the 6th Workshop on Computational Linguistics and Clinical Psychology*, pp. 24–33, 2019.
+
+    \item[\textbf{[7]}] S. C. Guntuku, D. B. Yaden, M. L. Kern, L. H. Ungar, and J. C. Eichstaedt, "Detecting depression and mental illness on social media: An integrative review," *Curr. Opin. Behav. Sci.*, vol. 18, pp. 43–49, 2017.
+\end{itemize}
+
+\subsection*{Reference / Handbooks}
+
+\begin{itemize}
+    \item[\textbf{[8]}] D. Jurafsky and J. H. Martin, *Speech and Language Processing*, 3rd ed. (Draft), Pearson Education, ISBN: 9780131873216.
+
+    \item[\textbf{[9]}] C. M. Bishop, *Pattern Recognition and Machine Learning*, 1st ed., Springer, ISBN: 9780387310732.
+
+    \item[\textbf{[10]}] S. Russell and P. Norvig, *Artificial Intelligence: A Modern Approach*, 3rd ed., Pearson Education, ISBN: 9780136042594.
+\end{itemize}
